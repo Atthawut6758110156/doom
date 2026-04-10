@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Doom!">
+  <meta name="theme-color" content="#0A0E1A">
+  <title>Doom!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="apple-touch-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" rx="42" fill="%230A0E1A"/><text x="90" y="116" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="96" font-weight="800" fill="%235ef491">D</text></svg>'>
+  <style>
+    :root {
+      --bg: #0A0E1A;
+      --surface: rgba(17, 24, 39, 0.92);
+      --surface-strong: #111827;
+      --border: #1E293B;
+      --accent: #5ef491;
+      --gain: #00E676;
+      --loss: #FF3D57;
+      --tax: #FFB300;
+      --text: #F1F5F9;
+      --muted: #64748B;
+      --purple: #7C4DFF;
+      --buy: #2796ff;
+      --sell: #ff8f1f;
+      --flash: rgba(255, 179, 0, 0.16);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --topbar-h: 98px;
+      --tabbar-h: 88px;
+      --radius: 24px;
+      --radius-sm: 18px;
+      --shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(94, 244, 145, 0.14), transparent 34%),
+        radial-gradient(circle at top right, rgba(0, 230, 118, 0.08), transparent 24%),
+        linear-gradient(180deg, #0b1120 0%, var(--bg) 38%, #09111d 100%);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+    }
+
+    button, input {
+      font: inherit;
+      color: inherit;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #app {
+      min-height: 100vh;
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen {
+      min-height: 100vh;
+    }
+
+    .selection-screen {
+      display: grid;
+      place-items: center;
+      padding: calc(36px + var(--safe-top)) 24px calc(32px + var(--safe-bottom));
+    }
+
+    .selection-panel {
+      width: min(100%, 520px);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.9), rgba(9, 17, 29, 0.94));
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      padding: 36px 22px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .selection-panel::before {
+      content: "";
+      position: absolute;
+      inset: -40% auto auto -18%;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(94, 244, 145, 0.18), transparent 68%);
+      pointer-events: none;
+    }
+
+    .wordmark-wrap {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: clamp(2.3rem, 8vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.06em;
+      color: var(--accent);
+    }
+
+    .wordmark-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d8ffe5, var(--accent) 55%, #2ca95b 100%);
+      box-shadow: 0 0 18px rgba(94, 244, 145, 0.45);
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1rem;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .instruction {
+      text-align: center;
+      color: var(--muted);
+      margin: 10px 0 28px;
+      font-size: 0.96rem;
+    }
+
+    .group-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .group-card,
+    .primary-btn,
+    .secondary-btn,
+    .tab-btn,
+    .direction-btn,
+    .stock-row,
+    .sheet-tab,
+    .stepper-btn,
+    .icon-btn,
+    .unlock-btn {
+      min-height: 44px;
+      border: 0;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+    }
+
+    .group-card {
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      border-radius: 26px;
+      padding: 24px 16px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(2.4rem, 11vw, 3.4rem);
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .group-card.selected {
+      border-color: rgba(94, 244, 145, 0.9);
+      background: linear-gradient(180deg, rgba(94, 244, 145, 0.18), rgba(15, 23, 42, 0.92));
+      box-shadow: 0 0 0 1px rgba(94, 244, 145, 0.32), 0 16px 36px rgba(94, 244, 145, 0.14);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .unlock-btn {
+      width: 100%;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent), #33cb70);
+      color: #07131f;
+      box-shadow: 0 12px 30px rgba(94, 244, 145, 0.22);
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .secondary-btn {
+      background: rgba(15, 23, 42, 0.72);
+      color: var(--text);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: calc(var(--topbar-h) + var(--safe-top));
+      padding: calc(12px + var(--safe-top)) 18px 14px;
+      background: linear-gradient(180deg, rgba(10, 14, 26, 0.98), rgba(10, 14, 26, 0.78) 78%, transparent);
+      backdrop-filter: blur(22px);
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .topbar-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--accent);
+      padding-top: 4px;
+    }
+
+    .topbar-brand .wordmark-dot {
+      width: 10px;
+      height: 10px;
+    }
+
+    .day-cluster {
+      align-self: center;
+      text-align: center;
+      min-width: 142px;
+    }
+
+    .day-label {
+      font-size: 0.93rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(30, 41, 59, 0.95);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(94, 244, 145, 0.68), var(--accent));
+      border-radius: inherit;
+      transition: width 260ms ease;
+    }
+
+    .balance-stack {
+      justify-self: end;
+      text-align: right;
+      padding-top: 2px;
+    }
+
+    .balance-usd {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .balance-thb {
+      margin-top: 2px;
+      font-size: 0.81rem;
+      color: var(--muted);
+    }
+
+    .content {
+      position: absolute;
+      inset: 0;
+      padding-top: calc(var(--topbar-h) + var(--safe-top));
+      padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom));
+      overflow: hidden;
+    }
+
+    .tab-pages {
+      height: 100%;
+      position: relative;
+    }
+
+    .tab-page {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      padding: 18px 16px 28px;
+      opacity: 0;
+      transform: translateX(18px);
+      pointer-events: none;
+      transition: opacity 220ms ease, transform 220ms ease;
+      scroll-behavior: smooth;
+    }
+
+    .tab-page.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .section {
+      margin-bottom: 16px;
+    }
+
+    .tab-page .section:first-child {
+      margin-top: 6px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      margin: 4px 4px 10px;
+      gap: 12px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .section-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .card,
+    .wallet-card,
+    .stock-list,
+    .tax-card,
+    .history-card {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(12, 20, 35, 0.9));
+      border: 1px solid rgba(30, 41, 59, 0.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+    }
+
+    .wallet-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .wallet-card {
+      padding: 16px;
+      min-height: 156px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .wallet-card::before {
+      content: "";
+      position: absolute;
+      inset: auto -18% -46% auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.05), transparent 68%);
+      pointer-events: none;
+    }
+
+    .wallet-label,
+    .inline-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .wallet-value {
+      margin: 12px 0 10px;
+      font-size: clamp(1.22rem, 4.3vw, 1.7rem);
+      font-weight: 700;
+      line-height: 1.15;
+      transition: background-color 240ms ease, color 220ms ease;
+      padding: 4px 0;
+      border-radius: 10px;
+    }
+
+    .wallet-value.usd {
+      color: var(--text);
+    }
+
+    .wallet-value.thb {
+      color: var(--text);
+    }
+
+    .wallet-subtext {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .exchange-card {
+      padding: 16px;
+    }
+
+    .rates-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      color: var(--text);
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+
+    .rates-line span {
+      color: var(--muted);
+    }
+
+    .direction-toggle,
+    .sheet-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .direction-btn,
+    .sheet-tab {
+      border-radius: 16px;
+      padding: 12px 10px;
+      background: rgba(15, 23, 42, 0.84);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .direction-btn.active,
+    .sheet-tab.active {
+      background: rgba(94, 244, 145, 0.15);
+      border-color: rgba(94, 244, 145, 0.72);
+      color: var(--accent);
+    }
+
+    .sheet-tab.sell-active {
+      background: rgba(255, 61, 87, 0.14);
+      border-color: rgba(255, 61, 87, 0.62);
+      color: var(--loss);
+    }
+
+    .field-wrap {
+      margin-bottom: 10px;
+    }
+
+    .amount-input {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      background: rgba(7, 12, 24, 0.92);
+      padding: 16px 14px;
+      min-height: 52px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .amount-input:focus {
+      border-color: rgba(94, 244, 145, 0.62);
+      box-shadow: 0 0 0 3px rgba(94, 244, 145, 0.12);
+    }
+
+    .exchange-output {
+      border-radius: 18px;
+      padding: 13px 14px;
+      background: rgba(94, 244, 145, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(94, 244, 145, 0.16);
+      margin-bottom: 10px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      transition: background-color 220ms ease;
+    }
+
+    .min-note,
+    .error-text,
+    .helper {
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .min-note,
+    .helper {
+      color: var(--muted);
+    }
+
+    .error-text {
+      color: var(--loss);
+      min-height: 20px;
+      margin: 2px 2px 10px;
+    }
+
+    .stock-list {
+      overflow: hidden;
+    }
+
+    .stock-row {
+      width: 100%;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.78);
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(86px, auto) minmax(92px, auto);
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      text-align: left;
+    }
+
+    .stock-row:last-child {
+      border-bottom: 0;
+    }
+
+    .ticker-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .ticker {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .company {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .holding-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(94, 244, 145, 0.1);
+      border: 1px solid rgba(94, 244, 145, 0.18);
+      white-space: nowrap;
+    }
+
+    .holding-badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(94, 244, 145, 0.55);
+    }
+
+    .stock-price {
+      text-align: right;
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .stock-change {
+      text-align: right;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.32;
+    }
+
+    .up {
+      color: var(--gain);
+    }
+
+    .down {
+      color: var(--loss);
+    }
+
+    .end-day-wrap {
+      padding: 6px 0 18px;
+    }
+
+    .end-day-wrap .primary-btn {
+      background: linear-gradient(135deg, #ff5a6f, var(--loss));
+      color: #fff5f7;
+      box-shadow: 0 12px 30px rgba(255, 61, 87, 0.22);
+    }
+
+    .bottom-bar {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 22;
+      background: rgba(10, 14, 26, 0.96);
+      border-top: 1px solid rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 10px 12px calc(10px + var(--safe-bottom));
+    }
+
+    .tabbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .tab-btn {
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-color: rgba(94, 244, 145, 0.68);
+      background: rgba(94, 244, 145, 0.1);
+    }
+
+    .tab-icon {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .tax-card {
+      position: relative;
+      padding: 18px 16px 16px;
+      border-color: rgba(255, 179, 0, 0.25);
+      box-shadow: 0 14px 40px rgba(255, 179, 0, 0.08);
+    }
+
+    .tax-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 179, 0, 0.06), transparent 24%);
+      pointer-events: none;
+    }
+
+    .tax-card.locked .tax-content {
+      filter: blur(8px);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .tax-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .tax-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .tax-badge {
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(255, 179, 0, 0.12);
+      border: 1px solid rgba(255, 179, 0, 0.22);
+      color: var(--tax);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .tax-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tax-row,
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .tax-row label,
+    .metric-row label {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .tax-row strong,
+    .metric-row strong {
+      text-align: right;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .net-score {
+      margin-top: 4px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(30, 41, 59, 0.75);
+    }
+
+    .net-score strong {
+      font-size: 1.08rem;
+    }
+
+    .lock-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 6px;
+      font-weight: 700;
+      background: linear-gradient(180deg, rgba(9, 17, 29, 0.12), rgba(9, 17, 29, 0.2));
+      pointer-events: none;
+    }
+
+    .lock-icon {
+      font-size: 1.8rem;
+    }
+
+    .unlock-wrap {
+      margin-bottom: 10px;
+    }
+
+    .unlock-btn {
+      background: linear-gradient(135deg, rgba(255, 179, 0, 0.18), rgba(255, 179, 0, 0.08));
+      color: var(--tax);
+      border: 1px solid rgba(255, 179, 0, 0.28);
+    }
+
+    .history-list {
+      padding: 6px;
+    }
+
+    .history-empty {
+      padding: 24px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .history-entry {
+      border: 1px solid rgba(30, 41, 59, 0.8);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(10, 16, 30, 0.72);
+      margin: 6px 0;
+    }
+
+    .holding-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) auto;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.78);
+      align-items: center;
+      width: 100%;
+      background: transparent;
+      border-left: 0;
+      border-right: 0;
+      border-top: 0;
+      text-align: left;
+    }
+
+    .holding-row:last-child {
+      border-bottom: 0;
+    }
+
+    .history-top,
+    .history-mid,
+    .history-bottom {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .history-mid,
+    .history-bottom {
+      margin-top: 6px;
+      align-items: flex-start;
+    }
+
+    .day-badge,
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      min-height: 26px;
+      padding: 3px 10px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .day-badge {
+      background: rgba(30, 41, 59, 0.75);
+      color: var(--text);
+    }
+
+    .action-buy {
+      background: rgba(39, 150, 255, 0.16);
+      border: 1px solid rgba(39, 150, 255, 0.26);
+      color: var(--buy);
+    }
+
+    .action-sell {
+      background: rgba(255, 143, 31, 0.14);
+      border: 1px solid rgba(255, 143, 31, 0.24);
+      color: var(--sell);
+    }
+
+    .action-exchange {
+      background: rgba(124, 77, 255, 0.14);
+      border: 1px solid rgba(124, 77, 255, 0.24);
+      color: #b38cff;
+    }
+
+    .history-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .history-detail {
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.35;
+    }
+
+    .pl-up {
+      color: var(--gain);
+    }
+
+    .pl-down {
+      color: var(--loss);
+    }
+
+    .pl-flat {
+      color: var(--text);
+    }
+
+    .history-value {
+      text-align: right;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .sheet-backdrop,
+    .dialog-backdrop,
+    .results-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+    }
+
+    .sheet-backdrop,
+    .dialog-backdrop {
+      background: rgba(3, 6, 14, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    .sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(9, 17, 29, 0.98));
+      border-radius: 26px 26px 0 0;
+      border: 1px solid rgba(30, 41, 59, 0.92);
+      padding: 10px 16px calc(18px + var(--safe-bottom));
+      box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.4);
+      transform: translateY(0);
+      max-height: 86vh;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+
+    .sheet-handle {
+      width: 56px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, 0.45);
+      margin: 2px auto 14px;
+    }
+
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .sheet-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .sheet-price {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .icon-btn {
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.84);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      color: var(--muted);
+    }
+
+    .position-card {
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(10, 16, 30, 0.8);
+      border: 1px solid rgba(30, 41, 59, 0.8);
+      margin-bottom: 12px;
+    }
+
+    .stepper-row {
+      display: grid;
+      grid-template-columns: 52px 1fr 52px;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .inline-action {
+      margin: -2px 0 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .inline-action .secondary-btn {
+      width: auto;
+      min-width: 112px;
+      padding: 10px 14px;
+      border-radius: 14px;
+    }
+
+    .sell-btn {
+      background: linear-gradient(135deg, #ff5a6f, var(--loss));
+      color: #fff5f7;
+      box-shadow: 0 12px 30px rgba(255, 61, 87, 0.22);
+    }
+
+    .sell-outline-btn {
+      background: rgba(255, 61, 87, 0.08);
+      color: var(--loss);
+      border: 1px solid rgba(255, 61, 87, 0.28);
+    }
+
+    .stepper-btn {
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.84);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .sheet-input {
+      text-align: center;
+    }
+
+    .trade-estimate {
+      border-radius: 18px;
+      background: rgba(94, 244, 145, 0.08);
+      border: 1px solid rgba(94, 244, 145, 0.16);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .dialog {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: calc(112px + var(--safe-bottom));
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(9, 17, 29, 0.98));
+      border-radius: 24px;
+      border: 1px solid rgba(30, 41, 59, 0.92);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .dialog-title {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .dialog-copy {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.9rem;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .day-flash {
+      position: fixed;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      z-index: 31;
+      width: min(calc(100vw - 32px), 360px);
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(17, 24, 39, 0.96);
+      border: 1px solid rgba(255, 179, 0, 0.22);
+      color: var(--tax);
+      box-shadow: var(--shadow);
+      animation: settleIn 260ms ease forwards;
+    }
+
+    .day-flash.buy-flash {
+      background: linear-gradient(180deg, rgba(12, 22, 22, 0.98), rgba(10, 18, 30, 0.98));
+      border: 1px solid rgba(94, 244, 145, 0.28);
+      color: var(--accent);
+    }
+
+    .day-flash.sell-flash {
+      background: linear-gradient(180deg, rgba(28, 12, 18, 0.98), rgba(16, 12, 24, 0.98));
+      border: 1px solid rgba(255, 61, 87, 0.28);
+      color: #ff8a9b;
+    }
+
+    .flash-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .flash-headline {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .flash-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .flash-subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .flash-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .flash-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .flash-row label {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .flash-row strong {
+      text-align: right;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .flash-close {
+      width: 38px;
+      min-width: 38px;
+      min-height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    @keyframes settleIn {
+      0% { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .results-overlay {
+      background:
+        radial-gradient(circle at top left, rgba(94, 244, 145, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(255, 179, 0, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(10, 14, 26, 0.98), rgba(6, 12, 22, 0.98));
+      overflow-y: auto;
+      padding: calc(28px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+    }
+
+    .results-inner {
+      max-width: 620px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-card,
+    .score-card,
+    .breakdown-card {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(9, 17, 29, 0.96));
+      border: 1px solid rgba(30, 41, 59, 0.92);
+      border-radius: 28px;
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-title {
+      margin: 0 0 10px;
+      font-size: clamp(1.6rem, 7vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .hero-meta {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: rgba(94, 244, 145, 0.1);
+      border: 1px solid rgba(94, 244, 145, 0.2);
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .hero-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .score-main {
+      border-radius: 24px;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(255, 179, 0, 0.16), rgba(255, 179, 0, 0.05));
+      border: 1px solid rgba(255, 179, 0, 0.24);
+      margin-top: 14px;
+    }
+
+    .score-main label {
+      color: rgba(255, 179, 0, 0.85);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .score-value {
+      margin-top: 10px;
+      font-size: clamp(1.8rem, 8vw, 2.7rem);
+      font-weight: 800;
+      color: var(--tax);
+    }
+
+    .metric-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .divider {
+      height: 1px;
+      background: rgba(30, 41, 59, 0.8);
+      margin: 12px 0;
+    }
+
+    .flash-update {
+      background-color: var(--flash);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @media (max-width: 420px) {
+      .wallet-grid,
+      .group-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        height: calc(150px + var(--safe-top));
+        gap: 8px;
+      }
+
+      .balance-stack {
+        justify-self: start;
+        text-align: left;
+      }
+
+      .day-cluster {
+        justify-self: start;
+        text-align: left;
+      }
+
+      .content {
+        padding-top: calc(154px + var(--safe-top));
+      }
+
+      .stock-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .stock-price,
+      .stock-change {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    (() => {
+      const STORAGE_KEY = "dime-sim-v1";
+      const STARTING_CAPITAL = 10000000;
+      const MIN_EXCHANGE_USD = 100;
+      const MAX_DAY = 11;
+      const STOCKS = [
+        { ticker: "NVDA", company: "Nvidia", range: [165, 185] },
+        { ticker: "AAPL", company: "Apple", range: [210, 235] },
+        { ticker: "MSFT", company: "Microsoft", range: [390, 430] },
+        { ticker: "GOOGL", company: "Alphabet", range: [175, 200] },
+        { ticker: "AMZN", company: "Amazon", range: [200, 220] },
+        { ticker: "META", company: "Meta Platforms", range: [560, 620] },
+        { ticker: "TSLA", company: "Tesla", range: [230, 290] },
+        { ticker: "BRK.B", company: "Berkshire Hathaway", range: [500, 560] },
+        { ticker: "AVGO", company: "Broadcom", range: [170, 220] },
+        { ticker: "TSM", company: "Taiwan Semi", range: [345, 380] }
+      ];
+      const PIT_BRACKETS = [
+        [150000, 0],
+        [300000, 0.05],
+        [500000, 0.10],
+        [750000, 0.15],
+        [1000000, 0.20],
+        [2000000, 0.25],
+        [5000000, 0.30],
+        [Infinity, 0.35]
+      ];
+
+      const fmtUSD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtTHB = new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtNum = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const app = document.getElementById("app");
+
+      let ui = {
+        selectedGroup: null,
+        activeTab: "invest",
+        exchangeDirection: "THB_TO_USD",
+        exchangeAmount: "",
+        exchangeError: "",
+        tradeSheet: null,
+        tradeMode: "BUY",
+        tradeShares: 1,
+        dialog: null,
+        dayFlash: "",
+        flashTone: "",
+        tradeReceipt: null,
+        dragStartY: null
+      };
+
+      let state = loadState();
+
+      render();
+
+      function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        try {
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function saveState() {
+        if (!state) {
+          localStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function round2(value) {
+        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+      }
+
+      function randomBetween(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function formatSignedUSD(value) {
+        const sign = value >= 0 ? "+" : "-";
+        return sign + fmtUSD.format(Math.abs(round2(value)));
+      }
+
+      function formatSignedTHB(value) {
+        const sign = value >= 0 ? "+" : "-";
+        return sign + fmtTHB.format(Math.abs(round2(value)));
+      }
+
+      function formatPercent(value) {
+        const sign = value >= 0 ? "+" : "-";
+        return sign + Math.abs(value).toFixed(2) + "%";
+      }
+
+      function todayLabel() {
+        const start = new Date();
+        start.setDate(start.getDate() + Math.max(0, (state?.currentDay || 1) - 1));
+        return start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      }
+
+      function getBuyRate() {
+        return round2(state.exchangeRateMid + 0.5);
+      }
+
+      function getSellRate() {
+        return round2(state.exchangeRateMid - 0.5);
+      }
+
+      function getHoldingAggregate(ticker) {
+        const holding = state.holdings[ticker];
+        if (!holding || !holding.lots.length) {
+          return { shares: 0, avgCost: 0, usdCostTotal: 0, thbCostTotal: 0, usTaxCreditUSD: 0 };
+        }
+        const aggregate = holding.lots.reduce((acc, lot) => {
+          acc.shares += lot.shares;
+          acc.usdCostTotal += lot.usdCostTotal;
+          acc.thbCostTotal += lot.thbCostTotal;
+          acc.usTaxCreditUSD += lot.usTaxCreditUSD || 0;
+          return acc;
+        }, { shares: 0, avgCost: 0, usdCostTotal: 0, thbCostTotal: 0, usTaxCreditUSD: 0 });
+        aggregate.avgCost = aggregate.shares ? round2(aggregate.usdCostTotal / aggregate.shares) : 0;
+        return aggregate;
+      }
+
+      function getAllHoldingsValue() {
+        return STOCKS.reduce((sum, stock) => {
+          const aggregate = getHoldingAggregate(stock.ticker);
+          return sum + (aggregate.shares * state.stockPrices[stock.ticker]);
+        }, 0);
+      }
+
+      function getAllHoldingsCost() {
+        return STOCKS.reduce((sum, stock) => sum + getHoldingAggregate(stock.ticker).usdCostTotal, 0);
+      }
+
+      function getAllHoldingsTHBCost() {
+        return STOCKS.reduce((sum, stock) => sum + getHoldingAggregate(stock.ticker).thbCostTotal, 0);
+      }
+
+      function getRemainingUsdLotsTHBCost() {
+        return round2(state.usdLots.reduce((sum, lot) => sum + (lot.thbCost || 0), 0));
+      }
+
+      function getCurrentProgress() {
+        return state.currentDay === 11 ? 100 : ((state.currentDay - 1) / 10) * 100;
+      }
+
+      function clone(obj) {
+        return JSON.parse(JSON.stringify(obj));
+      }
+
+      function calcPit(totalTaxableTHB) {
+        const taxable = Math.max(0, round2(totalTaxableTHB));
+        let tax = 0;
+        let lower = 0;
+        for (const [upper, rate] of PIT_BRACKETS) {
+          if (taxable <= lower) break;
+          const portion = Math.min(taxable, upper) - lower;
+          tax += portion * rate;
+          lower = upper;
+        }
+        return round2(tax);
+      }
+
+      function getPitBreakdown(totalTaxableTHB) {
+        const taxable = Math.max(0, round2(totalTaxableTHB));
+        const lines = [];
+        let lower = 0;
+        for (const [upper, rate] of PIT_BRACKETS) {
+          if (taxable <= lower) break;
+          const portion = Math.min(taxable, upper) - lower;
+          if (portion > 0) {
+            lines.push({
+              range: upper === Infinity ? `${fmtTHB.format(lower + 1)}+` : `${fmtTHB.format(lower)} – ${fmtTHB.format(upper)}`,
+              rate,
+              taxable: round2(portion),
+              tax: round2(portion * rate)
+            });
+          }
+          lower = upper;
+        }
+        return lines;
+      }
+
+      function createInitialState(group) {
+        const prices = {};
+        const changes = {};
+        STOCKS.forEach((stock) => {
+          prices[stock.ticker] = round2(randomBetween(stock.range[0], stock.range[1]));
+          changes[stock.ticker] = { amount: 0, percent: 0 };
+        });
+        return {
+          group,
+          currentDay: 1,
+          usdBalance: 0,
+          thbBalance: STARTING_CAPITAL,
+          stockPrices: prices,
+          priceChanges: changes,
+          holdings: STOCKS.reduce((acc, stock) => {
+            acc[stock.ticker] = { lots: [] };
+            return acc;
+          }, {}),
+          usdLots: [],
+          exchangeRateMid: round2(randomBetween(32, 35)),
+          tradeHistory: [],
+          exchangeHistory: [],
+          cumulativeNetRealizedGainUSD: 0,
+          cumulativeTaxableTHBProfit: 0,
+          totalUSGainsTaxPaid: 0,
+          totalThaiPITPaid: 0,
+          groupBUnlockDay: null,
+          result: null,
+          generatedAt: Date.now()
+        };
+      }
+
+      function consumeLots(lots, amountNeeded, amountKey) {
+        let remaining = round2(amountNeeded);
+        const consumed = [];
+        while (remaining > 0.0001 && lots.length) {
+          const lot = lots[0];
+          const available = lot[amountKey];
+          const take = Math.min(available, remaining);
+          const ratio = take / available;
+          const piece = { [amountKey]: round2(take) };
+          Object.keys(lot).forEach((key) => {
+            if (key === amountKey) return;
+            piece[key] = round2((lot[key] || 0) * ratio);
+            lot[key] = round2((lot[key] || 0) - piece[key]);
+          });
+          lot[amountKey] = round2(lot[amountKey] - take);
+          if (lot[amountKey] <= 0.0001) lots.shift();
+          remaining = round2(remaining - take);
+          consumed.push(piece);
+        }
+        return { consumed, remaining: round2(remaining) };
+      }
+
+      function advanceToNextDay() {
+        const nextDay = state.currentDay + 1;
+        if (nextDay > MAX_DAY) return;
+        state.exchangeRateMid = round2(Math.max(25, state.exchangeRateMid + randomBetween(-0.8, 1.2)));
+        STOCKS.forEach((stock) => {
+          const previous = state.stockPrices[stock.ticker];
+          const goesUp = Math.random() < 0.65;
+          const move = goesUp ? randomBetween(0.02, 0.12) : -randomBetween(0.02, 0.08);
+          const next = round2(previous * (1 + move));
+          state.stockPrices[stock.ticker] = next;
+          state.priceChanges[stock.ticker] = {
+            amount: round2(next - previous),
+            percent: round2(((next - previous) / previous) * 100)
+          };
+        });
+        state.currentDay = nextDay;
+        saveState();
+      }
+
+      function getLiveEstimates() {
+        const sellRate = state.exchangeRateMid - 0.5;
+        const holdingsValueUSD = getAllHoldingsValue();
+        const holdingsCostUSD = getAllHoldingsCost();
+        const holdingsCostTHB = getAllHoldingsTHBCost();
+        const remainingUsdCostTHB = getRemainingUsdLotsTHBCost();
+        const totalHypotheticalGainUSD = round2(state.cumulativeNetRealizedGainUSD + (holdingsValueUSD - holdingsCostUSD));
+        const usTaxEstimateUSD = round2(Math.max(0, totalHypotheticalGainUSD) * 0.37);
+        const grossThbIfCashed = round2(state.thbBalance + ((state.usdBalance + holdingsValueUSD) * sellRate));
+        const additionalUsTaxUSD = round2(Math.max(0, usTaxEstimateUSD - state.totalUSGainsTaxPaid));
+        const futureRemitProfitTHB = round2(((state.usdBalance + holdingsValueUSD) * sellRate) - remainingUsdCostTHB - holdingsCostTHB - (additionalUsTaxUSD * sellRate));
+        const totalTaxableIfCashedTHB = round2(Math.max(0, state.cumulativeTaxableTHBProfit + futureRemitProfitTHB));
+        const thaiPitEstimate = calcPit(totalTaxableIfCashedTHB);
+        const totalTaxEquivalent = round2((usTaxEstimateUSD * sellRate) + thaiPitEstimate);
+        const netScore = round2(grossThbIfCashed - totalTaxEquivalent);
+        return {
+          usTaxEstimateUSD,
+          thaiPitEstimate,
+          sellRate,
+          grossThbIfCashed,
+          totalTaxEquivalent,
+          netScore
+        };
+      }
+
+      function getStockSummary() {
+        const summary = {};
+        state.tradeHistory.forEach((trade) => {
+          if (!summary[trade.ticker]) summary[trade.ticker] = 0;
+          if (trade.action === "SELL") summary[trade.ticker] += trade.realizedGain || 0;
+        });
+        let best = null;
+        let worst = null;
+        Object.entries(summary).forEach(([ticker, value]) => {
+          if (!best || value > best.value) best = { ticker, value };
+          if (!worst || value < worst.value) worst = { ticker, value };
+        });
+        return { best, worst };
+      }
+
+      function startSimulation() {
+        if (!ui.selectedGroup) return;
+        state = createInitialState(ui.selectedGroup);
+        ui.activeTab = "invest";
+        ui.exchangeDirection = "THB_TO_USD";
+        ui.exchangeAmount = "";
+        ui.exchangeError = "";
+        ui.tradeSheet = null;
+        ui.dialog = null;
+        ui.dayFlash = "";
+        saveState();
+        render();
+      }
+
+      function maybeUnlockGroupB() {
+        if (state.group === "B" && !state.groupBUnlockDay && state.currentDay >= 8 && state.currentDay <= 10) {
+          state.groupBUnlockDay = state.currentDay;
+          saveState();
+          render();
+        }
+      }
+
+      function executeExchange(options = {}) {
+        const { ignoreMinimum = false } = options;
+        ui.exchangeError = "";
+        const rawAmount = Number(ui.exchangeAmount);
+        if (!rawAmount || rawAmount <= 0) {
+          ui.exchangeError = "Enter an amount to exchange.";
+          render();
+          return;
+        }
+
+        if (ui.exchangeDirection === "THB_TO_USD") {
+          const rate = getBuyRate();
+          const usdReceived = round2(rawAmount / rate);
+          if (!ignoreMinimum && usdReceived < MIN_EXCHANGE_USD) {
+            ui.exchangeError = "Minimum exchange is $100 USD equivalent.";
+            render();
+            return;
+          }
+          if (rawAmount > state.thbBalance + 0.001) {
+            ui.exchangeError = "Not enough THB balance.";
+            render();
+            return;
+          }
+          state.thbBalance = round2(state.thbBalance - rawAmount);
+          state.usdBalance = round2(state.usdBalance + usdReceived);
+          state.usdLots.push({
+            amountUSD: usdReceived,
+            thbCost: round2(rawAmount),
+            usTaxCreditUSD: 0
+          });
+          state.exchangeHistory.unshift({
+            type: "exchange",
+            day: state.currentDay,
+            direction: "THB → USD",
+            amountFrom: round2(rawAmount),
+            amountTo: usdReceived,
+            rate,
+            thbCostBasis: round2(rawAmount),
+            taxableProfit: 0,
+            pitApplied: 0,
+            hiddenTax: false,
+            createdAt: Date.now()
+          });
+        } else {
+          const rate = getSellRate();
+          if (!ignoreMinimum && rawAmount < MIN_EXCHANGE_USD) {
+            ui.exchangeError = "Minimum exchange is $100 USD equivalent.";
+            render();
+            return;
+          }
+          if (rawAmount > state.usdBalance + 0.001) {
+            ui.exchangeError = "Not enough USD balance.";
+            render();
+            return;
+          }
+          const receivedTHB = round2(rawAmount * rate);
+          const { consumed, remaining } = consumeLots(state.usdLots, rawAmount, "amountUSD");
+          if (remaining > 0.01) {
+            ui.exchangeError = "USD lots are out of sync. Please refresh and try again.";
+            render();
+            return;
+          }
+          const thbCostBasis = round2(consumed.reduce((sum, lot) => sum + (lot.thbCost || 0), 0));
+          const usTaxCreditUSD = round2(consumed.reduce((sum, lot) => sum + (lot.usTaxCreditUSD || 0), 0));
+          const taxableProfit = round2(receivedTHB - thbCostBasis - (usTaxCreditUSD * rate));
+          const pitBefore = calcPit(state.cumulativeTaxableTHBProfit);
+          state.cumulativeTaxableTHBProfit = round2(Math.max(0, state.cumulativeTaxableTHBProfit + taxableProfit));
+          const pitAfter = calcPit(state.cumulativeTaxableTHBProfit);
+          const pitApplied = round2(pitAfter - pitBefore);
+          state.totalThaiPITPaid = pitAfter;
+          state.usdBalance = round2(state.usdBalance - rawAmount);
+          state.thbBalance = round2(state.thbBalance + receivedTHB);
+          state.exchangeHistory.unshift({
+            type: "exchange",
+            day: state.currentDay,
+            direction: "USD → THB",
+            amountFrom: round2(rawAmount),
+            amountTo: receivedTHB,
+            rate,
+            thbCostBasis,
+            taxableProfit,
+            pitApplied,
+            hiddenTax: state.group === "B" && !state.groupBUnlockDay && state.currentDay < 8,
+            createdAt: Date.now()
+          });
+        }
+
+        ui.exchangeAmount = "";
+        saveState();
+        render();
+      }
+
+      function openTradeSheet(ticker) {
+        const aggregate = getHoldingAggregate(ticker);
+        if (state.currentDay === 11 && aggregate.shares <= 0) return;
+        ui.tradeSheet = ticker;
+        ui.tradeMode = state.currentDay === 11 ? "SELL" : "BUY";
+        ui.tradeShares = 1;
+        render();
+        attachSheetSwipe();
+      }
+
+      function openTradeSheetSell(ticker) {
+        const aggregate = getHoldingAggregate(ticker);
+        if (aggregate.shares <= 0) return;
+        ui.tradeSheet = ticker;
+        ui.tradeMode = "SELL";
+        ui.tradeShares = 1;
+        render();
+        attachSheetSwipe();
+      }
+
+      function closeTradeSheet() {
+        ui.tradeSheet = null;
+        ui.tradeShares = 1;
+        ui.dragStartY = null;
+        render();
+      }
+
+      function adjustTradeShares(delta) {
+        ui.tradeShares = Math.max(1, Math.floor((ui.tradeShares || 1) + delta));
+        const tradeInput = app.querySelector("[data-action='trade-input']");
+        if (tradeInput) tradeInput.value = ui.tradeShares;
+        updateTradePreview();
+      }
+
+      function setTradeShares(value) {
+        const parsed = Math.max(1, Math.floor(Number(value) || 1));
+        ui.tradeShares = parsed;
+        const tradeInput = app.querySelector("[data-action='trade-input']");
+        if (tradeInput) tradeInput.value = parsed;
+        updateTradePreview();
+      }
+
+      function sellAllShares() {
+        if (!ui.tradeSheet) return;
+        const aggregate = getHoldingAggregate(ui.tradeSheet);
+        if (!aggregate.shares) return;
+        ui.tradeShares = Math.max(1, Math.floor(aggregate.shares));
+        const tradeInput = app.querySelector("[data-action='trade-input']");
+        if (tradeInput) tradeInput.value = ui.tradeShares;
+        updateTradePreview();
+      }
+
+      function executeTrade() {
+        const ticker = ui.tradeSheet;
+        if (!ticker) return;
+        const price = state.stockPrices[ticker];
+        const shares = Math.max(1, Math.floor(Number(ui.tradeShares) || 1));
+        const holding = getHoldingAggregate(ticker);
+        let flashText = "";
+        let flashTone = "";
+        let receipt = null;
+        const stockMeta = STOCKS.find((stock) => stock.ticker === ticker);
+
+        if (ui.tradeMode === "BUY") {
+          if (state.currentDay === 11) return;
+          const totalCost = round2(shares * price);
+          if (totalCost > state.usdBalance + 0.001) {
+            return;
+          }
+          const { consumed, remaining } = consumeLots(state.usdLots, totalCost, "amountUSD");
+          if (remaining > 0.01) return;
+          const thbCostTotal = round2(consumed.reduce((sum, lot) => sum + (lot.thbCost || 0), 0));
+          const usTaxCreditUSD = round2(consumed.reduce((sum, lot) => sum + (lot.usTaxCreditUSD || 0), 0));
+          state.holdings[ticker].lots.push({
+            shares,
+            usdCostTotal: totalCost,
+            thbCostTotal,
+            usTaxCreditUSD
+          });
+          state.usdBalance = round2(state.usdBalance - totalCost);
+          state.tradeHistory.unshift({
+            type: "trade",
+            day: state.currentDay,
+            ticker,
+            company: stockMeta.company,
+            action: "BUY",
+            shares,
+            price,
+            totalUSD: totalCost,
+            realizedGain: 0,
+            createdAt: Date.now()
+          });
+          flashText = `Bought ${shares} ${ticker}`;
+          flashTone = "buy-flash";
+          receipt = {
+            ticker,
+            company: stockMeta.company,
+            shares,
+            price,
+            totalUSD: totalCost
+          };
+        } else {
+          if (shares > holding.shares) return;
+          const { consumed, remaining } = consumeLots(state.holdings[ticker].lots, shares, "shares");
+          if (remaining > 0.001) return;
+          const costBasisUSD = round2(consumed.reduce((sum, lot) => sum + (lot.usdCostTotal || 0), 0));
+          const thbCostTotal = round2(consumed.reduce((sum, lot) => sum + (lot.thbCostTotal || 0), 0));
+          const carryTaxCreditUSD = round2(consumed.reduce((sum, lot) => sum + (lot.usTaxCreditUSD || 0), 0));
+          const proceeds = round2(shares * price);
+          const realizedGain = round2(proceeds - costBasisUSD);
+          const previousTax = round2(Math.max(0, state.cumulativeNetRealizedGainUSD) * 0.37);
+          state.cumulativeNetRealizedGainUSD = round2(state.cumulativeNetRealizedGainUSD + realizedGain);
+          const nextTax = round2(Math.max(0, state.cumulativeNetRealizedGainUSD) * 0.37);
+          const taxDelta = round2(nextTax - previousTax);
+          state.totalUSGainsTaxPaid = nextTax;
+          state.usdLots.push({
+            amountUSD: proceeds,
+            thbCost: thbCostTotal,
+            usTaxCreditUSD: round2(carryTaxCreditUSD + taxDelta)
+          });
+          state.usdBalance = round2(state.usdBalance + proceeds);
+          state.tradeHistory.unshift({
+            type: "trade",
+            day: state.currentDay,
+            ticker,
+            company: stockMeta.company,
+            action: "SELL",
+            shares,
+            price,
+            totalUSD: proceeds,
+            realizedGain,
+            createdAt: Date.now()
+          });
+          flashText = `Sold ${shares} ${ticker}`;
+          flashTone = "sell-flash";
+          receipt = {
+            ticker,
+            company: stockMeta.company,
+            shares,
+            price,
+            totalUSD: proceeds
+          };
+        }
+
+        ui.tradeShares = 1;
+        ui.dayFlash = flashText;
+        ui.flashTone = flashTone;
+        ui.tradeReceipt = receipt;
+        saveState();
+        render();
+      }
+
+      function dismissTradeReceipt() {
+        ui.dayFlash = "";
+        ui.flashTone = "";
+        ui.tradeReceipt = null;
+        render();
+      }
+
+      function finalizeSimulation() {
+        if (!state || state.result) return;
+        STOCKS.forEach((stock) => {
+          const aggregate = getHoldingAggregate(stock.ticker);
+          if (aggregate.shares > 0) {
+            ui.tradeSheet = stock.ticker;
+            ui.tradeMode = "SELL";
+            ui.tradeShares = aggregate.shares;
+            executeTrade();
+          }
+        });
+
+        if (state.usdBalance > 0.01) {
+          ui.exchangeDirection = "USD_TO_THB";
+          ui.exchangeAmount = String(round2(state.usdBalance));
+          executeExchange({ ignoreMinimum: true });
+        }
+
+        const sellRate = getSellRate();
+        const grossFinalTHB = round2(state.thbBalance);
+        const usTaxTHB = round2(state.totalUSGainsTaxPaid * sellRate);
+        const netFinalScore = round2(grossFinalTHB - usTaxTHB - state.totalThaiPITPaid);
+        const totalReturn = round2(((netFinalScore - STARTING_CAPITAL) / STARTING_CAPITAL) * 100);
+        const summary = getStockSummary();
+        state.result = {
+          finishedAt: Date.now(),
+          startingCapitalTHB: STARTING_CAPITAL,
+          grossFinalTHB,
+          usTaxUSD: state.totalUSGainsTaxPaid,
+          usTaxTHB,
+          thaiPitTHB: state.totalThaiPITPaid,
+          netFinalScore,
+          totalReturn,
+          totalTrades: state.tradeHistory.length,
+          totalExchanges: state.exchangeHistory.length,
+          best: summary.best,
+          worst: summary.worst,
+          pitBreakdown: getPitBreakdown(state.cumulativeTaxableTHBProfit),
+          totalTaxableTHB: state.cumulativeTaxableTHBProfit
+        };
+        ui.tradeSheet = null;
+        ui.dialog = null;
+        ui.exchangeAmount = "";
+        saveState();
+        render();
+      }
+
+      function playAgain() {
+        state = null;
+        ui = {
+          selectedGroup: null,
+          activeTab: "invest",
+          exchangeDirection: "THB_TO_USD",
+          exchangeAmount: "",
+          exchangeError: "",
+          tradeSheet: null,
+          tradeMode: "BUY",
+          tradeShares: 1,
+          dialog: null,
+          dayFlash: "",
+          flashTone: "",
+          tradeReceipt: null,
+          dragStartY: null
+        };
+        saveState();
+        render();
+      }
+
+      function endDayFlow() {
+        if (state.currentDay === 11) {
+          ui.dialog = {
+            kind: "finalize",
+            title: "Finalize simulation?",
+            copy: "All holdings will be auto-liquidated and any remaining USD will be exchanged into THB at today's sell rate."
+          };
+        } else {
+          ui.dialog = {
+            kind: "endDay",
+            title: `End Day ${state.currentDay}?`,
+            copy: `Prices and exchange rates will update at the start of Day ${state.currentDay + 1}.`
+          };
+        }
+        render();
+      }
+
+      function confirmDialog() {
+        if (!ui.dialog) return;
+        const { kind } = ui.dialog;
+        ui.dialog = null;
+        if (kind === "endDay") {
+          ui.dayFlash = `Day ${state.currentDay} complete`;
+          render();
+          setTimeout(() => {
+            advanceToNextDay();
+            ui.dayFlash = "";
+            render();
+          }, 520);
+        } else if (kind === "finalize") {
+          finalizeSimulation();
+        }
+      }
+
+      function getCombinedHistory() {
+        return [...state.tradeHistory, ...state.exchangeHistory].sort((a, b) => b.createdAt - a.createdAt);
+      }
+
+      function renderSelectionScreen() {
+        app.innerHTML = `
+          <div class="screen selection-screen">
+            <div class="selection-panel">
+              <div class="wordmark-wrap">
+                <div class="wordmark"><span class="wordmark-dot"></span><span>Doom!</span></div>
+                <p class="subtitle">10-Day Trading Simulation</p>
+                <p class="instruction">Choose your group to begin</p>
+              </div>
+              <div class="group-grid">
+                <button class="group-card ${ui.selectedGroup === "A" ? "selected" : ""}" data-action="pick-group" data-group="A" aria-pressed="${ui.selectedGroup === "A"}">A</button>
+                <button class="group-card ${ui.selectedGroup === "B" ? "selected" : ""}" data-action="pick-group" data-group="B" aria-pressed="${ui.selectedGroup === "B"}">B</button>
+              </div>
+              <button class="primary-btn" data-action="start-simulation" ${ui.selectedGroup ? "" : "disabled"}>Start Simulation</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTopBar() {
+        return `
+          <header class="topbar">
+            <div class="topbar-brand"><span class="wordmark-dot"></span><span>Doom!</span></div>
+            <div class="day-cluster">
+              <div class="day-label">${state.currentDay === 11 ? "Final Day — Exchange Only" : `Day ${state.currentDay} / 10`}</div>
+              <div class="progress-track"><div class="progress-fill" style="width:${getCurrentProgress()}%"></div></div>
+            </div>
+            <div class="balance-stack">
+              <div class="balance-usd mono bind-flash" data-bind="top-usd">${fmtUSD.format(state.usdBalance)}</div>
+              <div class="balance-thb mono bind-flash" data-bind="top-thb">${fmtTHB.format(state.thbBalance)}</div>
+            </div>
+          </header>
+        `;
+      }
+
+      function renderWallets() {
+        return `
+          <section class="section">
+            <div class="wallet-grid">
+              <article class="wallet-card">
+                <div>
+                  <div class="wallet-label">USD Wallet</div>
+                  <div class="wallet-value usd mono bind-flash" data-bind="wallet-usd">${fmtUSD.format(state.usdBalance)}</div>
+                  <div class="wallet-subtext mono bind-flash" data-bind="wallet-usd-thb">≈ ${fmtTHB.format(state.usdBalance * getSellRate())} at ${fmtNum.format(getSellRate())}</div>
+                </div>
+                <div class="wallet-subtext">Use to buy stocks</div>
+              </article>
+              <article class="wallet-card">
+                <div>
+                  <div class="wallet-label">THB Wallet</div>
+                  <div class="wallet-value thb mono bind-flash" data-bind="wallet-thb">${fmtTHB.format(state.thbBalance)}</div>
+                </div>
+                <div class="wallet-subtext">Your score wallet</div>
+              </article>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderExchangePanel() {
+        const direction = ui.exchangeDirection;
+        const amount = Number(ui.exchangeAmount) || 0;
+        const output = direction === "THB_TO_USD"
+          ? amount > 0 ? `You receive ${fmtUSD.format(round2(amount / getBuyRate()))}` : `You receive ${fmtUSD.format(0)}`
+          : amount > 0 ? `You receive ${fmtTHB.format(round2(amount * getSellRate()))}` : `You receive ${fmtTHB.format(0)}`;
+        const formula = direction === "THB_TO_USD"
+          ? `${fmtTHB.format(amount)} ÷ ${fmtNum.format(getBuyRate())} = ${fmtUSD.format(amount > 0 ? round2(amount / getBuyRate()) : 0)}`
+          : `${fmtUSD.format(amount)} × ${fmtNum.format(getSellRate())} = ${fmtTHB.format(amount > 0 ? round2(amount * getSellRate()) : 0)}`;
+
+        return `
+          <section class="section">
+            <article class="card exchange-card">
+              <div class="rates-line">
+                <div><span>Mid:</span> <span class="mono" style="color:var(--text)">${fmtNum.format(state.exchangeRateMid)}</span></div>
+                <div><span>Buy USD (THB/USD):</span> <span class="mono" style="color:var(--text)">${fmtNum.format(getBuyRate())}</span></div>
+                <div><span>Sell USD (THB/USD):</span> <span class="mono" style="color:var(--text)">${fmtNum.format(getSellRate())}</span></div>
+              </div>
+              <div class="direction-toggle">
+                <button class="direction-btn ${direction === "USD_TO_THB" ? "active" : ""}" data-action="exchange-direction" data-direction="USD_TO_THB">USD → THB</button>
+                <button class="direction-btn ${direction === "THB_TO_USD" ? "active" : ""}" data-action="exchange-direction" data-direction="THB_TO_USD">THB → USD</button>
+              </div>
+              <div class="field-wrap">
+                <input class="amount-input mono" inputmode="decimal" type="number" min="0" step="0.01" placeholder="${direction === "THB_TO_USD" ? "Enter THB amount" : "Enter USD amount"}" value="${ui.exchangeAmount}" data-action="exchange-input">
+              </div>
+              <div class="exchange-output mono bind-flash" data-bind="exchange-output">${output}</div>
+              <div class="helper mono" data-bind="exchange-formula" style="margin:0 2px 8px;">${formula}</div>
+              <div class="error-text">${ui.exchangeError || ""}</div>
+              <button class="primary-btn" data-action="do-exchange">Exchange</button>
+              <div class="min-note" style="margin-top:10px;">Min. $100 USD</div>
+            </article>
+          </section>
+        `;
+      }
+
+      function renderStockList() {
+        const rows = STOCKS.map((stock) => {
+          const change = state.priceChanges[stock.ticker];
+          const holding = getHoldingAggregate(stock.ticker);
+          const changeClass = change.amount >= 0 ? "up" : "down";
+          return `
+            <button class="stock-row" data-action="open-trade" data-ticker="${stock.ticker}" ${state.currentDay === 11 && holding.shares <= 0 ? "disabled" : ""}>
+              <div>
+                <div class="ticker-line">
+                  <div class="ticker mono">${stock.ticker}</div>
+                  ${holding.shares > 0 ? `<span class="holding-badge">Holding</span>` : ""}
+                </div>
+                <div class="company">${stock.company}</div>
+              </div>
+              <div class="stock-price mono bind-flash" data-bind="stock-${stock.ticker}">${fmtUSD.format(state.stockPrices[stock.ticker])}</div>
+              <div class="stock-change ${changeClass} mono">${formatSignedUSD(change.amount)}<br>${formatPercent(change.percent)}</div>
+            </button>
+          `;
+        }).join("");
+
+        return `
+          <section class="section">
+            <div class="section-header">
+              <h2 class="section-title">Markets</h2>
+              <div class="section-note">${todayLabel()}</div>
+            </div>
+            <div class="stock-list">${rows}</div>
+          </section>
+        `;
+      }
+
+      function renderEndDayButton() {
+        return `
+          <section class="section end-day-wrap">
+            <button class="primary-btn" data-action="end-day">${state.currentDay === 11 ? "Finalize & See Results" : "End Day →"}</button>
+          </section>
+        `;
+      }
+
+      function renderInvestTab() {
+        return renderWallets() + renderExchangePanel() + renderStockList() + renderEndDayButton();
+      }
+
+      function renderTaxPanel() {
+        const live = getLiveEstimates();
+        const preUnlock = state.group === "B" && !state.groupBUnlockDay;
+        const locked = preUnlock && state.currentDay < 8;
+        const canUnlock = preUnlock && state.currentDay >= 8 && state.currentDay <= 10;
+        const masked = canUnlock ? "••••••" : null;
+        const usdValue = masked ? masked : fmtUSD.format(live.usTaxEstimateUSD);
+        const thPitValue = masked ? masked : fmtTHB.format(live.thaiPitEstimate);
+        const totalValue = masked ? masked : fmtTHB.format(live.totalTaxEquivalent);
+        const netValue = masked ? masked : fmtTHB.format(live.netScore);
+        return `
+          <section class="section">
+            ${canUnlock ? `<div class="unlock-wrap"><button class="unlock-btn" data-action="unlock-tax">Unlock Tax View</button></div>` : ""}
+            <article class="tax-card ${locked ? "locked" : ""}">
+              <div class="tax-header">
+                <h2 class="tax-title">Live Tax Estimate</h2>
+                <span class="tax-badge">Live</span>
+              </div>
+              <div class="tax-content">
+                <div class="tax-grid">
+                  <div class="tax-row"><label>US Capital Gains Tax (estimated)</label><strong class="mono bind-flash" data-bind="tax-us">${usdValue}</strong></div>
+                  <div class="tax-row"><label>US Tax Equivalent Today</label><strong class="mono bind-flash" data-bind="tax-us-thb">${masked ? masked : fmtTHB.format(live.usTaxEstimateUSD * live.sellRate)}</strong></div>
+                  <div class="tax-row"><label>Thai Tax</label><strong class="mono bind-flash" data-bind="tax-th">${thPitValue}</strong></div>
+                  <div class="tax-row"><label>Total Tax Equivalent</label><strong class="mono bind-flash" data-bind="tax-total">${totalValue}</strong></div>
+                  <div class="tax-row net-score"><label>Est. Net Score if cashed out now</label><strong class="mono bind-flash" data-bind="tax-net">${netValue}</strong></div>
+                </div>
+                <div class="helper mono" style="margin-top:12px;">${canUnlock ? "Unlock to reveal your live tax impact." : `( Exchange rate: ${fmtNum.format(live.sellRate)} THB/USD )`}</div>
+              </div>
+              ${locked ? `<div class="lock-overlay"><div class="lock-icon">🔒</div><div>Available from Day 8</div></div>` : ""}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderHoldingsPanel() {
+        const totalUnrealized = round2(STOCKS.reduce((sum, stock) => {
+          const aggregate = getHoldingAggregate(stock.ticker);
+          if (!aggregate.shares) return sum;
+          const currentValue = round2(aggregate.shares * state.stockPrices[stock.ticker]);
+          return sum + (currentValue - aggregate.usdCostTotal);
+        }, 0));
+
+        const items = STOCKS.map((stock) => {
+          const aggregate = getHoldingAggregate(stock.ticker);
+          if (!aggregate.shares) return "";
+          const currentValue = round2(aggregate.shares * state.stockPrices[stock.ticker]);
+          const unrealized = round2(currentValue - aggregate.usdCostTotal);
+          return `
+            <button class="holding-row" data-action="open-holding-sell" data-ticker="${stock.ticker}">
+              <div>
+                <div class="history-title mono">${stock.ticker} · ${aggregate.shares.toFixed(0)} shares</div>
+                <div class="history-detail">${stock.company} · Avg ${fmtUSD.format(aggregate.avgCost)}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="history-value mono">${fmtUSD.format(currentValue)}</div>
+                <div class="history-detail mono ${unrealized > 0 ? "pl-up" : unrealized < 0 ? "pl-down" : "pl-flat"}">${formatSignedUSD(unrealized)}</div>
+              </div>
+            </button>
+          `;
+        }).filter(Boolean).join("");
+
+        return `
+          <section class="section">
+            <div class="section-header">
+              <h2 class="section-title">All Holdings</h2>
+              <div class="section-note mono ${totalUnrealized > 0 ? "pl-up" : totalUnrealized < 0 ? "pl-down" : "pl-flat"}">Unrealized P/L ${formatSignedUSD(totalUnrealized)}</div>
+            </div>
+            <div class="history-card">
+              ${items || `<div class="history-empty">No holdings yet</div>`}
+            </div>
+          </section>
+        `;
+      }
+
+      function renderHistoryList() {
+        const combined = getCombinedHistory();
+        if (!combined.length) {
+          return `
+            <section class="section">
+              <div class="section-header"><h2 class="section-title">All Transactions</h2></div>
+              <div class="history-card">
+                <div class="history-empty">No transactions yet</div>
+              </div>
+            </section>
+          `;
+        }
+
+        const entries = combined.map((entry) => {
+          if (entry.type === "trade") {
+            return `
+              <article class="history-entry">
+                <div class="history-top">
+                  <span class="day-badge">Day ${entry.day}</span>
+                  <span class="action-badge ${entry.action === "BUY" ? "action-buy" : "action-sell"}">${entry.action}</span>
+                </div>
+                <div class="history-mid">
+                  <div>
+                    <div class="history-title mono">${entry.ticker} · ${entry.shares} ${entry.shares === 1 ? "share" : "shares"} @ ${fmtUSD.format(entry.price)}</div>
+                    <div class="history-detail">${entry.company}</div>
+                  </div>
+                  <div class="history-value mono">${fmtUSD.format(entry.totalUSD)}</div>
+                </div>
+                ${entry.action === "SELL" ? `<div class="history-bottom"><div class="history-detail">Realized P&L</div><div class="history-value mono ${entry.realizedGain >= 0 ? "up" : "down"}">${formatSignedUSD(entry.realizedGain)}</div></div>` : ""}
+              </article>
+            `;
+          }
+
+          const hideTax = state.group === "B" && !state.groupBUnlockDay && entry.direction === "USD → THB";
+          return `
+            <article class="history-entry">
+              <div class="history-top">
+                <span class="day-badge">Day ${entry.day}</span>
+                <span class="action-badge action-exchange">Exchange</span>
+              </div>
+              <div class="history-mid">
+                <div>
+                  <div class="history-title">${entry.direction}</div>
+                  <div class="history-detail mono">${entry.direction === "USD → THB" ? `${fmtUSD.format(entry.amountFrom)} → ${fmtTHB.format(entry.amountTo)}` : `${fmtTHB.format(entry.amountFrom)} → ${fmtUSD.format(entry.amountTo)}`}</div>
+                </div>
+                <div class="history-value mono">@ ${fmtNum.format(entry.rate)}</div>
+              </div>
+              ${entry.direction === "USD → THB" ? `
+                <div class="history-bottom">
+                  <div class="history-detail">${hideTax ? (state.currentDay >= 8 ? "Tax details hidden until unlocked" : "Tax details hidden until Day 8") : `Taxable profit ${formatSignedTHB(entry.taxableProfit)}`}</div>
+                  <div class="history-value mono ${hideTax ? "muted" : entry.pitApplied >= 0 ? "" : "up"}">${hideTax ? "••••••" : `PIT ${formatSignedTHB(entry.pitApplied)}`}</div>
+                </div>
+              ` : ""}
+            </article>
+          `;
+        }).join("");
+
+        return `
+          <section class="section">
+            <div class="section-header"><h2 class="section-title">All Transactions</h2></div>
+            <div class="history-card">
+              <div class="history-list">${entries}</div>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderHistoryTab() {
+        return renderTaxPanel() + renderHoldingsPanel() + renderHistoryList();
+      }
+
+      function renderTradeSheet() {
+        if (!ui.tradeSheet) return "";
+        const stock = STOCKS.find((item) => item.ticker === ui.tradeSheet);
+        const price = state.stockPrices[stock.ticker];
+        const aggregate = getHoldingAggregate(stock.ticker);
+        const currentValue = round2(aggregate.shares * price);
+        const unrealized = round2(currentValue - aggregate.usdCostTotal);
+        const shares = Math.max(1, Math.floor(ui.tradeShares || 1));
+        const estimate = round2(shares * price);
+        const canBuy = estimate <= state.usdBalance + 0.001;
+        const canSell = shares <= aggregate.shares;
+        const realizedIfSold = round2((price - aggregate.avgCost) * shares);
+
+        return `
+          <div class="sheet-backdrop" data-action="close-sheet">
+            <div class="sheet" id="trade-sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-head">
+                <div>
+                  <h3 class="sheet-title">${stock.company}</h3>
+                  <div class="sheet-price mono">${stock.ticker} · ${fmtUSD.format(price)}</div>
+                </div>
+                <button class="icon-btn" data-action="close-sheet" aria-label="Close trade sheet">✕</button>
+              </div>
+              <div class="position-card">
+                <div class="metric-row"><label>Your position</label><strong class="mono">${aggregate.shares.toFixed(0)} shares</strong></div>
+                <div class="metric-row"><label>Avg cost</label><strong class="mono">${aggregate.shares ? fmtUSD.format(round2(aggregate.usdCostTotal / aggregate.shares)) : fmtUSD.format(0)}</strong></div>
+                <div class="metric-row"><label>Current value</label><strong class="mono">${fmtUSD.format(currentValue)}</strong></div>
+                <div class="metric-row"><label>Unrealized P&amp;L</label><strong class="mono ${unrealized >= 0 ? "up" : "down"}">${formatSignedUSD(unrealized)}</strong></div>
+              </div>
+              <div class="sheet-tabs">
+                <button class="sheet-tab ${ui.tradeMode === "BUY" ? "active" : ""}" data-action="trade-mode" data-mode="BUY" ${state.currentDay === 11 ? "disabled" : ""}>BUY</button>
+                <button class="sheet-tab ${ui.tradeMode === "SELL" ? "active sell-active" : ""}" data-action="trade-mode" data-mode="SELL">SELL</button>
+              </div>
+              <div class="stepper-row">
+                <button class="stepper-btn" data-action="trade-step" data-delta="-1">−</button>
+                <input class="amount-input mono sheet-input" inputmode="numeric" type="number" min="1" step="1" value="${shares}" data-action="trade-input">
+                <button class="stepper-btn" data-action="trade-step" data-delta="1">+</button>
+              </div>
+              ${ui.tradeMode === "SELL" && aggregate.shares > 0 ? `
+                <div class="inline-action">
+                  <button class="secondary-btn sell-outline-btn" data-action="sell-all">Sell All Shares</button>
+                </div>
+              ` : ""}
+              <div class="trade-estimate">
+                ${ui.tradeMode === "BUY" ? `
+                  <div class="metric-row"><label>Estimated cost</label><strong class="mono">${fmtUSD.format(estimate)}</strong></div>
+                  <div class="metric-row"><label>Available USD</label><strong class="mono">${fmtUSD.format(state.usdBalance)}</strong></div>
+                ` : `
+                  <div class="metric-row"><label>Estimated proceeds</label><strong class="mono">${fmtUSD.format(estimate)}</strong></div>
+                  <div class="metric-row"><label>Realized gain/loss</label><strong class="mono ${realizedIfSold >= 0 ? "up" : "down"}">${formatSignedUSD(realizedIfSold)}</strong></div>
+                `}
+              </div>
+              <div class="error-text">${ui.tradeMode === "BUY" && !canBuy ? "Not enough USD balance for this order." : ui.tradeMode === "SELL" && !canSell ? "You cannot sell more shares than you own." : ""}</div>
+              <button class="primary-btn ${ui.tradeMode === "SELL" ? "sell-btn" : ""}" data-action="confirm-trade" ${(ui.tradeMode === "BUY" && !canBuy) || (ui.tradeMode === "SELL" && !canSell) ? "disabled" : ""}>${ui.tradeMode === "BUY" ? "Confirm Buy" : "Confirm Sell"}</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderDialog() {
+        if (!ui.dialog) return "";
+        return `
+          <div class="dialog-backdrop" data-action="dismiss-dialog">
+            <div class="dialog">
+              <h3 class="dialog-title">${ui.dialog.title}</h3>
+              <p class="dialog-copy">${ui.dialog.copy}</p>
+              <div class="dialog-actions">
+                <button class="secondary-btn" data-action="dismiss-dialog">Cancel</button>
+                <button class="primary-btn" data-action="confirm-dialog">Confirm</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderResults() {
+        if (!state.result) return "";
+        const r = state.result;
+        const groupMeta = state.group === "A"
+          ? "Group A"
+          : (state.groupBUnlockDay ? `Group B · You unlocked tax view on Day ${state.groupBUnlockDay}` : "Group B · You kept tax hidden throughout");
+        const pitLines = r.pitBreakdown.map((line) => `
+          <div class="metric-row">
+            <label>${line.range} · ${Math.round(line.rate * 100)}%</label>
+            <strong class="mono">${fmtTHB.format(line.tax)}</strong>
+          </div>
+        `).join("");
+
+        return `
+          <section class="results-overlay">
+            <div class="results-inner">
+              <article class="hero-card">
+                <div class="hero-meta">${groupMeta}</div>
+                <h1 class="hero-title">Simulation Complete</h1>
+                <p class="hero-copy">Your blind tax experience is now fully revealed. Here’s the final score after auto-liquidation, final exchange, and tax impact.</p>
+              </article>
+              <article class="score-card">
+                <div class="metric-stack">
+                  <div class="metric-row"><label>Starting capital</label><strong class="mono">${fmtTHB.format(r.startingCapitalTHB)}</strong></div>
+                  <div class="metric-row"><label>Final THB (before tax)</label><strong class="mono">${fmtTHB.format(r.grossFinalTHB)}</strong></div>
+                  <div class="metric-row"><label>US Tax paid</label><strong class="mono">${formatSignedUSD(-r.usTaxUSD)} <span class="muted">(${formatSignedTHB(-r.usTaxTHB)})</span></strong></div>
+                  <div class="metric-row"><label>Thai PIT owed</label><strong class="mono">${formatSignedTHB(-r.thaiPitTHB)}</strong></div>
+                </div>
+                <div class="score-main">
+                  <label>Net Final Score</label>
+                  <div class="score-value mono">${fmtTHB.format(r.netFinalScore)}</div>
+                  <div class="helper ${r.totalReturn >= 0 ? "up" : "down"}" style="margin-top:8px;font-size:0.92rem;font-weight:800;">${formatPercent(r.totalReturn)}</div>
+                </div>
+              </article>
+              <article class="breakdown-card">
+                <h2 class="section-title" style="margin:0 0 14px;">Tax Breakdown</h2>
+                <div class="metric-stack">
+                  <div class="metric-row"><label>US Capital Gains</label><strong class="mono">${formatSignedUSD(state.cumulativeNetRealizedGainUSD)}</strong></div>
+                  <div class="metric-row"><label>US tax rate</label><strong class="mono">37%</strong></div>
+                  <div class="metric-row"><label>US tax amount</label><strong class="mono">${fmtUSD.format(r.usTaxUSD)}</strong></div>
+                </div>
+                <div class="divider"></div>
+                <div class="metric-row"><label>Thai taxable remitted profit</label><strong class="mono">${fmtTHB.format(r.totalTaxableTHB)}</strong></div>
+                <div class="metric-stack" style="margin-top:12px;">${pitLines || `<div class="metric-row"><label>No taxable profit</label><strong class="mono">${fmtTHB.format(0)}</strong></div>`}</div>
+              </article>
+              <article class="breakdown-card">
+                <h2 class="section-title" style="margin:0 0 14px;">Trade Summary</h2>
+                <div class="metric-stack">
+                  <div class="metric-row"><label>Total trades made</label><strong class="mono">${r.totalTrades}</strong></div>
+                  <div class="metric-row"><label>Best performing stock</label><strong class="mono">${r.best ? `${r.best.ticker} · ${formatSignedUSD(r.best.value)}` : "N/A"}</strong></div>
+                  <div class="metric-row"><label>Worst performing stock</label><strong class="mono">${r.worst ? `${r.worst.ticker} · ${formatSignedUSD(r.worst.value)}` : "N/A"}</strong></div>
+                  <div class="metric-row"><label>Number of exchanges made</label><strong class="mono">${r.totalExchanges}</strong></div>
+                </div>
+              </article>
+              <button class="primary-btn" data-action="play-again">Play Again</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderAppShell() {
+        app.innerHTML = `
+          <div class="screen app-shell">
+            ${renderTopBar()}
+            <main class="content">
+              <div class="tab-pages">
+                <section class="tab-page ${ui.activeTab === "invest" ? "active" : ""}" id="tab-invest">${renderInvestTab()}</section>
+                <section class="tab-page ${ui.activeTab === "history" ? "active" : ""}" id="tab-history">${renderHistoryTab()}</section>
+              </div>
+            </main>
+            <nav class="bottom-bar">
+              <div class="tabbar">
+                <button class="tab-btn ${ui.activeTab === "invest" ? "active" : ""}" data-action="tab" data-tab="invest">
+                  <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l4-6 4 2 4-8 4 4"></path><path d="M4 20h16"></path></svg>
+                  <span>Invest</span>
+                </button>
+                <button class="tab-btn ${ui.activeTab === "history" ? "active" : ""}" data-action="tab" data-tab="history">
+                  <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="8"></circle></svg>
+                  <span>Assets</span>
+                </button>
+              </div>
+            </nav>
+            ${renderTradeSheet()}
+            ${renderDialog()}
+            ${ui.dayFlash ? (
+              ui.tradeReceipt ? `
+                <div class="day-flash ${ui.flashTone || ""}">
+                  <div class="flash-top">
+                    <div class="flash-headline">
+                      <div class="flash-title mono">${ui.tradeReceipt.ticker}</div>
+                      <div class="flash-subtitle">${ui.tradeReceipt.company}</div>
+                    </div>
+                    <button class="flash-close" data-action="dismiss-trade-receipt" aria-label="Close receipt">✕</button>
+                  </div>
+                  <div class="flash-grid">
+                    <div class="flash-row"><label>${ui.tradeReceipt.shares === 1 ? "Share" : "Shares"}</label><strong class="mono">${ui.tradeReceipt.shares}</strong></div>
+                    <div class="flash-row"><label>Price</label><strong class="mono">${fmtUSD.format(ui.tradeReceipt.price)}</strong></div>
+                    <div class="flash-row"><label>Total</label><strong class="mono">${fmtUSD.format(ui.tradeReceipt.totalUSD)}</strong></div>
+                  </div>
+                </div>
+              ` : `<div class="day-flash">${ui.dayFlash}</div>`
+            ) : ""}
+            ${renderResults()}
+          </div>
+        `;
+      }
+
+      function render() {
+        if (!state) {
+          renderSelectionScreen();
+        } else {
+          renderAppShell();
+        }
+        bindEvents();
+        flashChangedValues();
+      }
+
+      function updateExchangePreview() {
+        const outputNode = app.querySelector("[data-bind='exchange-output']");
+        const formulaNode = app.querySelector("[data-bind='exchange-formula']");
+        const errorNode = app.querySelector(".exchange-card .error-text");
+        const inputNode = app.querySelector("[data-action='exchange-input']");
+        if (!outputNode || !inputNode) return;
+        const direction = ui.exchangeDirection;
+        const amount = Number(ui.exchangeAmount) || 0;
+        inputNode.placeholder = direction === "THB_TO_USD" ? "Enter THB amount" : "Enter USD amount";
+        outputNode.textContent = direction === "THB_TO_USD"
+          ? `You receive ${fmtUSD.format(amount > 0 ? round2(amount / getBuyRate()) : 0)}`
+          : `You receive ${fmtTHB.format(amount > 0 ? round2(amount * getSellRate()) : 0)}`;
+        if (formulaNode) {
+          formulaNode.textContent = direction === "THB_TO_USD"
+            ? `${fmtTHB.format(amount)} ÷ ${fmtNum.format(getBuyRate())} = ${fmtUSD.format(amount > 0 ? round2(amount / getBuyRate()) : 0)}`
+            : `${fmtUSD.format(amount)} × ${fmtNum.format(getSellRate())} = ${fmtTHB.format(amount > 0 ? round2(amount * getSellRate()) : 0)}`;
+        }
+        if (errorNode) errorNode.textContent = ui.exchangeError || "";
+      }
+
+      function updateTradePreview() {
+        if (!ui.tradeSheet) return;
+        const ticker = ui.tradeSheet;
+        const price = state.stockPrices[ticker];
+        const aggregate = getHoldingAggregate(ticker);
+        const shares = Math.max(1, Math.floor(Number(ui.tradeShares) || 1));
+        const estimate = round2(shares * price);
+        const realizedIfSold = round2((price - aggregate.avgCost) * shares);
+        const errorNode = app.querySelector(".sheet .error-text");
+        const button = app.querySelector("[data-action='confirm-trade']");
+        const estimateBox = app.querySelector(".trade-estimate");
+        if (!estimateBox || !button) return;
+
+        if (ui.tradeMode === "BUY") {
+          estimateBox.innerHTML = `
+            <div class="metric-row"><label>Estimated cost</label><strong class="mono">${fmtUSD.format(estimate)}</strong></div>
+            <div class="metric-row"><label>Available USD</label><strong class="mono">${fmtUSD.format(state.usdBalance)}</strong></div>
+          `;
+          const canBuy = estimate <= state.usdBalance + 0.001;
+          if (errorNode) errorNode.textContent = canBuy ? "" : "Not enough USD balance for this order.";
+          button.disabled = !canBuy;
+          button.textContent = "Confirm Buy";
+        } else {
+          estimateBox.innerHTML = `
+            <div class="metric-row"><label>Estimated proceeds</label><strong class="mono">${fmtUSD.format(estimate)}</strong></div>
+            <div class="metric-row"><label>Realized gain/loss</label><strong class="mono ${realizedIfSold >= 0 ? "up" : "down"}">${formatSignedUSD(realizedIfSold)}</strong></div>
+          `;
+          const canSell = shares <= aggregate.shares;
+          if (errorNode) errorNode.textContent = canSell ? "" : "You cannot sell more shares than you own.";
+          button.disabled = !canSell;
+          button.textContent = "Confirm Sell";
+        }
+      }
+
+      function bindEvents() {
+        app.querySelectorAll("[data-action='pick-group']").forEach((button) => {
+          button.addEventListener("click", () => {
+            ui.selectedGroup = button.dataset.group;
+            render();
+          });
+        });
+
+        const startBtn = app.querySelector("[data-action='start-simulation']");
+        if (startBtn) startBtn.addEventListener("click", startSimulation);
+
+        app.querySelectorAll("[data-action='tab']").forEach((button) => {
+          button.addEventListener("click", () => {
+            ui.activeTab = button.dataset.tab;
+            render();
+          });
+        });
+
+        app.querySelectorAll("[data-action='exchange-direction']").forEach((button) => {
+          button.addEventListener("click", () => {
+            ui.exchangeDirection = button.dataset.direction;
+            ui.exchangeError = "";
+            render();
+          });
+        });
+
+        const exchangeInput = app.querySelector("[data-action='exchange-input']");
+        if (exchangeInput) {
+          exchangeInput.addEventListener("input", (event) => {
+            ui.exchangeAmount = event.target.value;
+            ui.exchangeError = "";
+            updateExchangePreview();
+          });
+        }
+
+        const exchangeBtn = app.querySelector("[data-action='do-exchange']");
+        if (exchangeBtn) exchangeBtn.addEventListener("click", executeExchange);
+
+        app.querySelectorAll("[data-action='open-trade']").forEach((button) => {
+          button.addEventListener("click", () => openTradeSheet(button.dataset.ticker));
+        });
+
+        app.querySelectorAll("[data-action='open-holding-sell']").forEach((button) => {
+          button.addEventListener("click", () => openTradeSheetSell(button.dataset.ticker));
+        });
+
+        const sheetBackdrop = app.querySelector(".sheet-backdrop");
+        if (sheetBackdrop) {
+          sheetBackdrop.addEventListener("click", (event) => {
+            if (event.target === event.currentTarget) closeTradeSheet();
+          });
+        }
+
+        const closeSheetBtn = app.querySelector(".icon-btn[data-action='close-sheet']");
+        if (closeSheetBtn) {
+          closeSheetBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            closeTradeSheet();
+          });
+        }
+
+        const sheet = app.querySelector(".sheet");
+        if (sheet) {
+          sheet.addEventListener("click", (event) => {
+            event.stopPropagation();
+          });
+        }
+
+        app.querySelectorAll("[data-action='trade-mode']").forEach((button) => {
+          button.addEventListener("click", () => {
+            ui.tradeMode = button.dataset.mode;
+            render();
+          });
+        });
+
+        app.querySelectorAll("[data-action='trade-step']").forEach((button) => {
+          button.addEventListener("click", () => adjustTradeShares(Number(button.dataset.delta)));
+        });
+
+        const tradeInput = app.querySelector("[data-action='trade-input']");
+        if (tradeInput) {
+          tradeInput.addEventListener("input", (event) => {
+            ui.tradeShares = Math.max(1, Math.floor(Number(event.target.value) || 1));
+            updateTradePreview();
+          });
+        }
+
+        const sellAllBtn = app.querySelector("[data-action='sell-all']");
+        if (sellAllBtn) sellAllBtn.addEventListener("click", sellAllShares);
+
+        const confirmTrade = app.querySelector("[data-action='confirm-trade']");
+        if (confirmTrade) confirmTrade.addEventListener("click", executeTrade);
+
+        const dismissReceiptBtn = app.querySelector("[data-action='dismiss-trade-receipt']");
+        if (dismissReceiptBtn) dismissReceiptBtn.addEventListener("click", dismissTradeReceipt);
+
+        const endDayBtn = app.querySelector("[data-action='end-day']");
+        if (endDayBtn) endDayBtn.addEventListener("click", endDayFlow);
+
+        app.querySelectorAll("[data-action='dismiss-dialog']").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            if (event.target === event.currentTarget || event.currentTarget.dataset.action === "dismiss-dialog") {
+              ui.dialog = null;
+              render();
+            }
+          });
+        });
+
+        const confirmBtn = app.querySelector("[data-action='confirm-dialog']");
+        if (confirmBtn) confirmBtn.addEventListener("click", confirmDialog);
+
+        const unlockBtn = app.querySelector("[data-action='unlock-tax']");
+        if (unlockBtn) unlockBtn.addEventListener("click", maybeUnlockGroupB);
+
+        const playAgainBtn = app.querySelector("[data-action='play-again']");
+        if (playAgainBtn) playAgainBtn.addEventListener("click", playAgain);
+      }
+
+      function flashChangedValues() {
+        const nodes = app.querySelectorAll("[data-bind]");
+        nodes.forEach((node) => {
+          const key = node.dataset.bind;
+          const current = node.textContent.trim();
+          if (!node.dataset.prevValue) {
+            node.dataset.prevValue = current;
+            return;
+          }
+          if (node.dataset.prevValue !== current) {
+            node.classList.add("flash-update");
+            clearTimeout(node._flashTimer);
+            node._flashTimer = setTimeout(() => node.classList.remove("flash-update"), 380);
+            node.dataset.prevValue = current;
+          }
+        });
+      }
+
+      function attachSheetSwipe() {
+        const sheet = document.getElementById("trade-sheet");
+        if (!sheet) return;
+        sheet.addEventListener("touchstart", (event) => {
+          ui.dragStartY = event.touches[0].clientY;
+        }, { passive: true });
+        sheet.addEventListener("touchmove", (event) => {
+          if (ui.dragStartY == null) return;
+          const delta = event.touches[0].clientY - ui.dragStartY;
+          if (delta > 90) {
+            closeTradeSheet();
+          }
+        }, { passive: true });
+        sheet.addEventListener("touchend", () => {
+          ui.dragStartY = null;
+        }, { passive: true });
+      }
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && ui.tradeSheet) closeTradeSheet();
+      });
+    })();
+  </script>
+</body>
+</html>
